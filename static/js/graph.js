@@ -1,33 +1,40 @@
 /* global dc, crossfilter, d3 */
+
+// == load the data
 d3.csv('data/people.csv')
   .then(function (data) {
-    data.forEach(function (d) {
-      if (d["CreditCardType"] == "") {
-        d["CreditCardType"] = "no data"
-      }
-      d.age = ~~((Date.now() - new Date(d.DOB)) / (31557600000));
-      d.ageGroup = roundDown(d.age, 10) + "'s'"
-    });
+    data.forEach(d => modifyData(d));
     return data;
   })
   .then(function (data) {
-    makeGraphs(data);
+    createCharts(data);
   })
   .catch(function (error) {
     console.log(error);
   });
 
-function makeGraphs(peopleData) {
+function modifyData(d) {
+  if (d["CreditCardType"] == "") {
+    d["CreditCardType"] = "no data"
+  }
+  d.age = ~~((Date.now() - new Date(d.DOB)) / (31557600000));
+  d.ageGroup = roundDown(d.age, 10) + "'s'"
+  return d;
+}
+
+function createCharts(peopleData) {
   dc.config.defaultColors(d3.schemePaired);
 
+  // ==  create the crossfilter object
   let ndx = crossfilter(peopleData);
 
+  // ==  create dimensions
   let genderDimension = ndx.dimension(function (data) { return data.gender; }),
     ageGroupDimension = ndx.dimension(function (data) { return data.ageGroup; });
 
   // instanciate the charts
-  let barChart01 =  dc.barChart('#chart01'),
-    barChart02 =  dc.barChart('#chart02');
+  let barChart01 = dc.barChart('#chart01'),
+    barChart02 = dc.barChart('#chart02');
 
   barChart01
     .dimension(genderDimension)
@@ -49,17 +56,9 @@ function makeGraphs(peopleData) {
     .yAxisLabel("Count")
     .xAxisLabel("Age");
 
-    dc.renderAll();
+  dc.renderAll();
 };
 
-
-function modifyData(data) {
-  if (d["CreditCardType"] == "") {
-    d["CreditCardType"] = "no data"
-  }
-  d.age = ~~((Date.now() - new Date(d.DOB)) / (31557600000));
-  d.ageGroup = roundDown(d.age, 10) + "'s'"
-}
 
 let roundDown = function (num, precision) {
   num = parseFloat(num);
